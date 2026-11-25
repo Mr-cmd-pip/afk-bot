@@ -1,86 +1,123 @@
 # AFK Voice Bot
 
-A Discord bot built with discord.js v14 and @discordjs/voice. It joins a voice channel when you tell it to and stays there until you tell it to leave. Runs off a single bot token, so it works across as many servers as you invite it to, and each server's connection is handled independently.
+A Discord bot that joins your voice channel on command and stays there until you tell it to leave. It is built with Node.js, discord.js v14 and @discordjs/voice. One bot token works across any number of servers, and each server's connection is handled independently.
 
-## What it does
+## Features
 
-- `!afk` joins the voice channel you're currently sitting in
-- `!stopafk` disconnects it from that server's voice channel
-- Works in multiple servers at the same time without them interfering with each other
-- Waits until the connection actually confirms it's ready before telling you it joined, instead of just assuming it worked
-- Gives you a real error message if something goes wrong (missing permissions, timeout, deleted channel) instead of failing silently
-- Stays in the channel indefinitely, even if everyone else leaves, until `!stopafk` is used or the bot process itself is stopped
-
-## Requirements
-
-- Node.js v18 or higher
-- A Discord bot application and token, created through the [Discord Developer Portal](https://discord.com/developers/applications)
-- Message Content Intent turned on for the bot (Developer Portal, your application, Bot, Privileged Gateway Intents)
-
-## Setup
-
-1. Clone the repo
-   ```bash
-   git clone https://github.com/reshape404-jpg/afk-bot.git
-   cd afk-bot
-   ```
-
-2. Install dependencies
-   ```bash
-   npm install
-   ```
-
-3. Set up your environment variables
-
-   Copy the example file:
-   ```bash
-   cp .env.example .env
-   ```
-   Then open `.env` and drop in your token:
-   ```
-   DISCORD_TOKEN=your_bot_token_here
-   ```
-
-4. Start the bot
-   ```bash
-   node index.js
-   ```
-   If everything's set up right, you'll see something like:
-   ```
-   Ready! Logged in as YourBotName#0000
-   ```
-
-## Inviting it to a server
-
-1. Go to the [Discord Developer Portal](https://discord.com/developers/applications), open your application, then go to OAuth2 and the URL Generator.
-2. Under Scopes, check `bot`.
-3. Under Bot Permissions, check:
-   - View Channels
-   - Connect
-   - Speak
-4. Copy the generated link and open it. You'll need Manage Server permission on whatever server you're adding it to.
+- **Join on command:** `!afk` brings the bot into the voice channel you are currently in
+- **Leave on command:** `!stopafk` disconnects it from that server's voice channel
+- **Multi-server:** the bot can sit in a voice channel in several servers at once without them affecting each other
+- **Confirmed joins:** it waits up to 20 seconds for the voice connection to be ready before replying, instead of assuming it worked
+- **Clear errors:** missing permissions, connection timeouts and deleted channels each produce a readable message in chat instead of a silent failure
+- **Stays put:** it does not leave when everyone else does, and only disconnects on `!stopafk` or when the process stops
+- **Self-deafened:** the bot joins deafened, so it does not receive voice audio
 
 ## Commands
 
-| Command    | What it does                                 |
-|------------|-----------------------------------------------|
-| `!afk`     | Joins the voice channel you're currently in   |
-| `!stopafk` | Disconnects the bot from the voice channel    |
+The command prefix is `!`.
 
-## A few things worth knowing
+| Command | What it does |
+|---|---|
+| `!afk` | Join the voice channel you are currently in |
+| `!stopafk` | Disconnect from the voice channel in this server |
 
-- The bot won't leave an empty voice channel on its own. It just sits there until someone runs `!stopafk`, or the process stops.
-- It doesn't remember what channel it was in. If the process restarts for any reason, whether that's a crash, a redeploy, or you stopping it manually, it disconnects from everything and won't rejoin automatically.
-- Don't commit your `.env` file. It's already excluded through `.gitignore`, and it's the only thing standing between your bot token and anyone who finds your repo.
+If the bot is already connected in a server, `!afk` tells you to run `!stopafk` first if you want to move it.
+
+## Tech stack
+
+| Area | Tools |
+|---|---|
+| Runtime | Node.js 18 or later |
+| Bot framework | discord.js 14 |
+| Voice | @discordjs/voice, sodium-native, @discordjs/opus |
+| Config | dotenv |
+
+## Getting started
+
+### Requirements
+
+- Node.js 18 or later
+- A Discord bot application and token from the [Discord Developer Portal](https://discord.com/developers/applications)
+
+### 1. Create the bot and enable the intent
+
+In the Developer Portal, open your application, go to **Bot**, and turn on **Message Content Intent** under Privileged Gateway Intents. The bot reads `!` commands from message text, so it will not respond without this.
+
+### 2. Install
+
+```bash
+git clone https://github.com/Mr-cmd-pip/afk-bot.git
+cd afk-bot
+npm install
+```
+
+### 3. Configure
+
+Copy the example environment file and add your token:
+
+```bash
+cp .env.example .env
+```
+
+```env
+DISCORD_TOKEN=your_bot_token_here
+```
+
+Never commit your `.env` file. It is already listed in `.gitignore`, and the token is all anyone needs to control your bot.
+
+### 4. Run
+
+```bash
+node index.js
+```
+
+When it connects, you will see:
+
+```
+Ready! Logged in as YourBotName#0000
+```
+
+To keep the bot online around the clock, run it on an always-on host or under a process manager such as PM2.
+
+### Invite the bot to a server
+
+1. In the Developer Portal, open your application, then go to **OAuth2** and **URL Generator**.
+2. Under Scopes, select `bot`.
+3. Under Bot Permissions, select View Channels, Send Messages, Read Message History and Connect.
+4. Open the generated link and choose a server. You need the Manage Server permission there.
+
+The bot only needs to listen, so it does not need the Speak permission.
+
+## How it works
+
+- **Per-server connections:** the bot tracks one voice connection per server, so `!afk` and `!stopafk` in one server never touch another
+- **Ready check:** after joining, it waits for the connection to reach the ready state, up to 20 seconds, before confirming to the user
+- **Error handling:** common join failures are translated into plain messages that tell the user what to fix
 
 ## Project structure
 
 ```
 afk-bot/
-├── .env              (not committed, holds your real token)
-├── .env.example       (committed, just a placeholder)
-├── .gitignore
+├── index.js           # the bot: client setup, commands, error handling
 ├── package.json
 ├── package-lock.json
-├── index.js           (the bot itself)
+├── .env.example       # token placeholder, safe to commit
+├── .gitignore         # excludes .env and node_modules
 └── README.md
+```
+
+## Troubleshooting
+
+| Problem | Likely cause and fix |
+|---|---|
+| Bot is online but ignores commands | Message Content Intent is off. Turn it on in the Developer Portal and restart the bot |
+| "Used disallowed intents" error on start | Same cause: enable Message Content Intent |
+| "I don't have permission to join that voice channel" | Give the bot View Channel and Connect on that channel |
+| "Timed out trying to connect" | The channel may be full, or Discord's voice servers may be having issues. Try again shortly |
+| "Missing DISCORD_TOKEN" on start | The `.env` file is missing or the variable name is wrong |
+
+## Limitations
+
+- The bot does not remember its channel. If the process restarts, crashes or is redeployed, it disconnects from every server and does not rejoin on its own
+- There is no permission check on the commands, so any member who can message in a channel the bot reads can run `!afk` or `!stopafk`
+- It joins only the channel of the person who ran the command, and only one channel per server at a time
